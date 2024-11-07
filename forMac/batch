@@ -169,7 +169,7 @@ echo "휴지통 파일 복사 완료"
 echo "네이버 MYBOX 캐시파일 복사 중..."
 # ADB Temp 폴더 경로
 TEMP_FOLDER="/sdcard/Android/data/com.nhn.android.ndrive/cache/temp"
-LOCAL_SAVE_PATH="Users/Shared/test/MYBOX_cache"  # PC에 저장할 폴더
+LOCAL_SAVE_PATH="/Users/Shared/test/MYBOX_cache"  # PC에 저장할 폴더
 
 # 폴더가 없으면 생성
 if [ ! -d "$LOCAL_SAVE_PATH" ]; then
