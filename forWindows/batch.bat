@@ -1,33 +1,56 @@
-@REM @echo off
-@REM chcp 65001 > nul
-@REM setlocal
-@REM setlocal EnableDelayedExpansion
+@echo off
+chcp 65001 > nul
+setlocal
+setlocal EnableDelayedExpansion
 
-@REM REM 1. ADB 경로 설정
-@REM set ADB_PATH=C:\Users\15U50P\AppData\Local\Android\Sdk\platform-tools
-@REM set PATH=%ADB_PATH%;%PATH%
+REM 1. ADB 경로 설정
+set ADB_PATH=C:\Users\15U50P\AppData\Local\Android\Sdk\platform-tools
+set PATH=%ADB_PATH%;%PATH%
 
-@REM REM 2. EXIFTool 경로 설정
-@REM set EXIFTOOL_PATH=C:\exiftool
-@REM set PATH=%EXIFTOOL_PATH%;%PATH%
+REM 2. EXIFTool 경로 설정
+set EXIFTOOL_PATH=C:\exiftool
+set PATH=%EXIFTOOL_PATH%;%PATH%
 
-@REM REM 3. 사진 파일 복사
-@REM echo "사진 파일 복사 중..."
+REM 3. 사진 파일 복사
+echo "사진 파일 복사 중..."
 
-@REM REM 폴더가 없으면 새로 생성
-@REM if not exist "C:\test\" (
-@REM     echo "폴더가 존재하지 않습니다. 새 폴더를 생성합니다..."
-@REM     mkdir "C:\test\"
-@REM )
+REM 폴더가 없으면 새로 생성
+if not exist "C:\test\" (
+    echo "폴더가 존재하지 않습니다. 새 폴더를 생성합니다..."
+    mkdir "C:\test\"
+)
 
-@REM REM adb로 사진 파일 복사
-@REM adb pull /sdcard/DCIM/Camera/ C:\test\
+@REM REM 파일 목록 가져오기 및 파일 처리
+@REM FOR /F "tokens=*" %%A IN ('adb shell ls /sdcard/DCIM/Camera/*.jpg 2^>NUL') DO (
 
-@REM REM 에러 처리
-@REM if errorlevel 1 (
-@REM     echo "사진 파일 복사 실패"
-@REM     pause
-@REM     exit /b
+@REM     SET FILE=%%A
+    
+@REM     REM 파일 이름에서 CR(Carriage Return) 제거
+@REM     for /F "delims=" %%B in ('echo !FILE!') do (
+@REM         set FILE=%%B
+@REM     )
+@REM     echo "---"
+@REM     echo !FILE!
+@REM     echo "---"
+
+@REM     REM 수정 날짜와 시간을 가져오기
+@REM     for /f "tokens=2,3" %%i in ('adb shell stat "%FILE%" ^| findstr "Modify:"') do (
+@REM         set MODIFY_DATE=%%i
+@REM         set MODIFY_TIME=%%j
+@REM     )
+    
+@REM     REM MODIFY_DATE에서 YYYYMMDD 추출
+@REM     set DATE_PART=%MODIFY_DATE:~0,4%%MODIFY_DATE:~5,2%%MODIFY_DATE:~8,2%
+
+@REM     REM MODIFY_TIME에서 HHMMSS 추출
+@REM     set TIME_PART=%MODIFY_TIME:~0,2%%MODIFY_TIME:~3,2%%MODIFY_TIME:~6,2%
+
+@REM     REM 최종 결과 생성
+@REM     set RESULT="%DATE_PART%_%TIME_PART%.jpg"
+@REM     echo %RESULT%
+
+@REM     REM 파일을 지정된 위치로 복사
+@REM     adb pull "%FILE%" "C:\test\Camera"
 @REM )
 
 @REM REM 4. EXIF GPS데이터 추출 (디렉토리 내 모든 JPEG 파일에 대해)
@@ -254,79 +277,47 @@
 @REM endlocal
 
 
-@REM @echo off
-@REM chcp 65001 > nul
-
-@REM  mkdir "C:\test\Camera"
-
-@REM REM 파일 목록 가져오기
-@REM FOR /F "tokens=*" %%A IN ('adb shell ls /sdcard/DCIM/Camera/*.jpg 2^>NUL') DO (
-@REM     SET FILE=%%A
-@REM     CALL :PROCESS_FILE
-@REM )
-@REM GOTO :EOF
-
-@REM :PROCESS_FILE
-@REM REM 파일 이름에서 CR(Carriage Return) 제거
-@REM FOR /F "delims=" %%B IN ('echo %FILE%') DO (
-@REM     SET FILE=%%B
-@REM )
-
-@REM for /f "tokens=2,3" %%i in ('adb shell stat "%FILE%" ^| findstr "Modify:"') do (
-@REM     set MODIFY_DATE=%%i
-@REM     set MODIFY_TIME=%%j
-@REM )
-
-@REM :: MODIFY_DATE에서 YYYYMMDD 추출
-@REM set DATE_PART=%MODIFY_DATE:~0,4%%MODIFY_DATE:~5,2%%MODIFY_DATE:~8,2%
-
-@REM :: MODIFY_TIME에서 HHMMSS 추출
-@REM set TIME_PART=%MODIFY_TIME:~0,2%%MODIFY_TIME:~3,2%%MODIFY_TIME:~6,2%
-
-@REM :: 최종 결과 생성
-@REM set RESULT="%DATE_PART%_%TIME_PART%.jpg"
-@REM adb pull "%FILE%" "C:\test\Camera"
-@REM echo %RESULT%
-
 @echo off
 chcp 65001 > nul
 SETLOCAL ENABLEDELAYEDEXPANSION
 
-
-mkdir "C:\test\Camera"
+mkdir "C:\test\Trash"
 
 REM 파일 목록 가져오기 및 파일 처리
-FOR /F "tokens=*" %%A IN ('adb shell ls /sdcard/DCIM/Camera/*.jpg 2^>NUL') DO (
-
-    SET FILE=%%A
+FOR /F "tokens=*" %%A IN ('adb shell ls /sdcard/Android/data/com.sec.android.gallery3d/files/.Trash 2^>NUL') DO (
+    SET "FILE=%%A"
     
     REM 파일 이름에서 CR(Carriage Return) 제거
-    for /F "delims=" %%B in ('echo !FILE!') do (
-        set FILE=%%B
-    )
-    echo "---"
-    echo !FILE!
-    echo "---"
-
-    REM 수정 날짜와 시간을 가져오기
-    for /f "tokens=2,3" %%i in ('adb shell stat "%FILE%" ^| findstr "Modify:"') do (
-        set MODIFY_DATE=%%i
-        set MODIFY_TIME=%%j
+    FOR /F "delims=" %%B IN ('echo !FILE!') DO (
+        SET "FILE=%%B"
     )
     
+    REM 전체 파일 경로 설정
+    SET "FULL_PATH=/sdcard/Android/data/com.sec.android.gallery3d/files/.Trash/!FILE!"
+    
+    echo ---
+    echo "파일 경로: !FULL_PATH!"
+    echo ---
+    
+    REM 수정 날짜와 시간을 가져오기
+    FOR /F "tokens=2,3" %%i IN ('adb shell stat "!FULL_PATH!" ^| findstr "Modify:"') DO (
+        SET "MODIFY_DATE=%%i"
+        SET "MODIFY_TIME=%%j"
+    )
+
     REM MODIFY_DATE에서 YYYYMMDD 추출
-    set DATE_PART=%MODIFY_DATE:~0,4%%MODIFY_DATE:~5,2%%MODIFY_DATE:~8,2%
+    SET "DATE_PART=!MODIFY_DATE:~0,4!!MODIFY_DATE:~5,2!!MODIFY_DATE:~8,2!"
 
     REM MODIFY_TIME에서 HHMMSS 추출
-    set TIME_PART=%MODIFY_TIME:~0,2%%MODIFY_TIME:~3,2%%MODIFY_TIME:~6,2%
+    SET "TIME_PART=!MODIFY_TIME:~0,2!!MODIFY_TIME:~3,2!!MODIFY_TIME:~6,2!"
 
     REM 최종 결과 생성
-    set RESULT="%DATE_PART%_%TIME_PART%.jpg"
-    echo %RESULT%
+    SET "RESULT=!DATE_PART!_!TIME_PART!.jpg"
+    
+    echo "파일 복사 중: !RESULT!"
 
     REM 파일을 지정된 위치로 복사
-    adb pull "%FILE%" "C:\test\Camera"
+    adb pull "!FULL_PATH!" "C:\test\Trash\!RESULT!"
 )
 
 ENDLOCAL
-
