@@ -100,30 +100,6 @@ if "%FOLDER_EXISTS%"=="exists" (
 )
 
 
-REM 4. EXIF GPS데이터 추출 (디렉토리 내 모든 JPEG 파일에 대해)
-
-REM 폴더 존재 확인 및 생성
-if not exist "C:\test\metadata" (
-    echo "metadata 폴더가 존재하지 않습니다. 새 폴더를 생성합니다..."
-    mkdir "C:\test\metadata"
-)
-
-echo "EXIF 데이터 추출 중..."
-
-REM 모든 JPEG 파일에 대해 EXIF GPS 데이터 추출
-for %%f in ("C:\test\Camera\*.jpg") do (
-    REM 파일 이름에서 경로 및 확장자 제거
-    set "filename=%%~nf"
-    REM exiftool을 사용하여 EXIF GPS 데이터를 추출하고 해당 파일로 저장
-    exiftool -gps* "%%f" > "C:\test\metadata\!filename!_metadata.txt"
-)
-
-if errorlevel 1 (
-    echo "EXIF 데이터 추출 실패"
-) else (
-    echo "EXIF 데이터 추출 완료"
-)
-
 REM 5. 휴지통 폴더 복사
 mkdir "C:\test\Trash"
 
@@ -160,6 +136,46 @@ FOR /F "tokens=*" %%A IN ('adb shell ls /sdcard/Android/data/com.sec.android.gal
     adb pull "!FULL_PATH!" "C:\test\Trash\!RESULT!"
 )
 
+
+REM 4. EXIF GPS데이터 추출 (디렉토리 내 모든 JPEG 파일에 대해)
+
+REM 폴더 존재 확인 및 생성
+if not exist "C:\test\metadata" (
+    echo "metadata 폴더가 존재하지 않습니다. 새 폴더를 생성합니다..."
+    mkdir "C:\test\metadata"
+)
+
+echo "EXIF 데이터 추출 중...1"
+
+REM 모든 JPEG 파일에 대해 EXIF GPS 데이터 추출
+for %%f in ("C:\test\Camera\*.jpg") do (
+    REM 파일 이름에서 경로 및 확장자 제거
+    set "filename=%%~nf"
+    REM exiftool을 사용하여 EXIF GPS 데이터를 추출하고 해당 파일로 저장
+    exiftool -gps* "%%f" > "C:\test\metadata\!filename!_metadata.txt"
+)
+
+if errorlevel 1 (
+    echo "EXIF 데이터 추출 실패1"
+) else (
+    echo "EXIF 데이터 추출 완료1"
+)
+
+echo "EXIF 데이터 추출 중...2"
+
+REM 모든 JPEG 파일에 대해 EXIF GPS 데이터 추출
+for %%f in ("C:\test\Trash\*.jpg") do (
+    REM 파일 이름에서 경로 및 확장자 제거
+    set "filename=%%~nf"
+    REM exiftool을 사용하여 EXIF GPS 데이터를 추출하고 해당 파일로 저장
+    exiftool -gps* "%%f" > "C:\test\metadata\!filename!_metadata.txt"
+)
+
+if errorlevel 1 (
+    echo "EXIF 데이터 추출 실패2"
+) else (
+    echo "EXIF 데이터 추출 완료2"
+)
 
 REM 8. 네이버 MYBOX 캐시파일 복사
 REM ADB Temp 폴더 경로

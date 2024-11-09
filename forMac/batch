@@ -82,25 +82,6 @@ fi
 echo "모든 사진 파일 복사 완료!"
 
 
-# 4. EXIF GPS 데이터 추출
-if [ ! -d "/Users/Shared/test/metadata" ]; then
-  echo "metadata 폴더가 존재하지 않습니다. 새 폴더를 생성합니다..."
-  mkdir "/Users/Shared/test/metadata"
-fi
-
-echo "EXIF 데이터 추출 중..."
-
-for f in /Users/Shared/test/Camera/*.jpg; do
-  filename=$(basename "$f" .jpg)
-  exiftool -gps* "$f" > "/Users/Shared/test/metadata/${filename}_metadata.txt"
-done
-
-if [ $? -ne 0 ]; then
-  echo "EXIF 데이터 추출 실패"
-else
-  echo "EXIF 데이터 추출 완료"
-fi
-
 # 5. 휴지통 폴더 복사
 echo "휴지통 폴더 복사 중..."
 TRASH_FOLDER="/sdcard/Android/data/com.sec.android.gallery3d/files/.Trash"
@@ -164,6 +145,39 @@ for FILE in $FILES; do
 done
 
 echo "휴지통 파일 복사 완료"
+
+# 4. EXIF GPS 데이터 추출
+if [ ! -d "/Users/Shared/test/metadata" ]; then
+  echo "metadata 폴더가 존재하지 않습니다. 새 폴더를 생성합니다..."
+  mkdir "/Users/Shared/test/metadata"
+fi
+
+echo "EXIF 데이터 추출 중...1"
+
+for f in /Users/Shared/test/Camera/*.jpg; do
+  filename=$(basename "$f" .jpg)
+  exiftool -gps* "$f" > "/Users/Shared/test/metadata/${filename}_metadata.txt"
+done
+
+if [ $? -ne 0 ]; then
+  echo "EXIF 데이터 추출 실패1"
+else
+  echo "EXIF 데이터 추출 완료1"
+fi
+
+
+echo "EXIF 데이터 추출 중...2"
+
+for f in /Users/Shared/test/Trash/*.jpg; do
+  filename=$(basename "$f" .jpg)
+  exiftool -gps* "$f" > "/Users/Shared/test/metadata/${filename}_metadata.txt"
+done
+
+if [ $? -ne 0 ]; then
+  echo "EXIF 데이터 추출 실패2"
+else
+  echo "EXIF 데이터 추출 완료2"
+fi
 
 # 8. 네이버 MYBOX 캐시파일 복사
 echo "네이버 MYBOX 캐시파일 복사 중..."
