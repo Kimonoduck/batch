@@ -3,22 +3,22 @@ chcp 65001 > nul
 setlocal
 setlocal EnableDelayedExpansion
 
-REM 1. ADB 경로 설정
-set ADB_PATH=C:\Users\15U50P\AppData\Local\Android\Sdk\platform-tools
-set PATH=%ADB_PATH%;%PATH%
+@REM REM 1. ADB 경로 설정
+@REM set ADB_PATH=C:\Users\15U50P\AppData\Local\Android\Sdk\platform-tools
+@REM set PATH=%ADB_PATH%;%PATH%
 
-REM 2. EXIFTool 경로 설정
-set EXIFTOOL_PATH=C:\exiftool
-set PATH=%EXIFTOOL_PATH%;%PATH%
+@REM REM 2. EXIFTool 경로 설정
+@REM set EXIFTOOL_PATH=C:\exiftool
+@REM set PATH=%EXIFTOOL_PATH%;%PATH%
 
-REM 3. 사진 파일 복사
-echo "사진 파일 복사 중..."
+@REM REM 3. 사진 파일 복사
+@REM echo "사진 파일 복사 중..."
 
-REM 폴더가 없으면 새로 생성
-if not exist "C:\test\" (
-    echo "폴더가 존재하지 않습니다. 새 폴더를 생성합니다..."
-    mkdir "C:\test\"
-)
+@REM REM 폴더가 없으면 새로 생성
+@REM if not exist "C:\test\" (
+@REM     echo "폴더가 존재하지 않습니다. 새 폴더를 생성합니다..."
+@REM     mkdir "C:\test\"
+@REM )
 
 @REM REM 파일 목록 가져오기 및 파일 처리
 @REM FOR /F "tokens=*" %%A IN ('adb shell ls /sdcard/DCIM/Camera/*.jpg 2^>NUL') DO (
@@ -78,21 +78,43 @@ if not exist "C:\test\" (
 @REM )
 
 @REM REM 5. 휴지통 폴더 복사
-@REM echo "휴지통 폴더 복사 중..."
-@REM adb pull /sdcard/Android/data/com.sec.android.gallery3d/files/.Trash C:\test\
+@REM mkdir "C:\test\Trash"
 
-@REM if errorlevel 1 (
-@REM     echo "휴지통 폴더 복사 실패"
-@REM ) else (
-@REM     REM 폴더 이름 변경
-@REM     ren "C:\test\.Trash" "Trash"
-@REM     echo "폴더명을 Trash로 변경하였습니다."
-@REM )
+@REM REM 파일 목록 가져오기 및 파일 처리
+@REM FOR /F "tokens=*" %%A IN ('adb shell ls /sdcard/Android/data/com.sec.android.gallery3d/files/.Trash 2^>NUL') DO (
+@REM     SET "FILE=%%A"
+    
+@REM     REM 파일 이름에서 CR(Carriage Return) 제거
+@REM     FOR /F "delims=" %%B IN ('echo !FILE!') DO (
+@REM         SET "FILE=%%B"
+@REM     )
+    
+@REM     REM 전체 파일 경로 설정
+@REM     SET "FULL_PATH=/sdcard/Android/data/com.sec.android.gallery3d/files/.Trash/!FILE!"
+    
+@REM     echo ---
+@REM     echo "파일 경로: !FULL_PATH!"
+@REM     echo ---
+    
+@REM     REM 수정 날짜와 시간을 가져오기
+@REM     FOR /F "tokens=2,3" %%i IN ('adb shell stat "!FULL_PATH!" ^| findstr "Modify:"') DO (
+@REM         SET "MODIFY_DATE=%%i"
+@REM         SET "MODIFY_TIME=%%j"
+@REM     )
 
-@REM REM 파일을 .jpg로 변경
-@REM echo "파일 확장자 변경 중..."
-@REM for %%f in (C:\test\Trash\*) do (
-@REM     ren "%%f" "%%~nf.jpg"
+@REM     REM MODIFY_DATE에서 YYYYMMDD 추출
+@REM     SET "DATE_PART=!MODIFY_DATE:~0,4!!MODIFY_DATE:~5,2!!MODIFY_DATE:~8,2!"
+
+@REM     REM MODIFY_TIME에서 HHMMSS 추출
+@REM     SET "TIME_PART=!MODIFY_TIME:~0,2!!MODIFY_TIME:~3,2!!MODIFY_TIME:~6,2!"
+
+@REM     REM 최종 결과 생성
+@REM     SET "RESULT=!DATE_PART!_!TIME_PART!.jpg"
+    
+@REM     echo "파일 복사 중: !RESULT!"
+
+@REM     REM 파일을 지정된 위치로 복사
+@REM     adb pull "!FULL_PATH!" "C:\test\Trash\!RESULT!"
 @REM )
 
 
@@ -276,31 +298,24 @@ if not exist "C:\test\" (
 @REM echo "작업 완료!"
 @REM endlocal
 
+mkdir "C:\test\Soda_cache"
 
-@echo off
-chcp 65001 > nul
-SETLOCAL ENABLEDELAYEDEXPANSION
 
-mkdir "C:\test\Trash"
-
-REM 파일 목록 가져오기 및 파일 처리
-FOR /F "tokens=*" %%A IN ('adb shell ls /sdcard/Android/data/com.sec.android.gallery3d/files/.Trash 2^>NUL') DO (
+REM jpg 파일 목록 가져오기 및 파일 처리
+FOR /F "tokens=*" %%A IN ('adb shell ls /sdcard/Android/data/com.snowcorp.soda.android/files/temp/*.jpg 2^>NUL') DO (
     SET "FILE=%%A"
     
     REM 파일 이름에서 CR(Carriage Return) 제거
     FOR /F "delims=" %%B IN ('echo !FILE!') DO (
         SET "FILE=%%B"
     )
-    
-    REM 전체 파일 경로 설정
-    SET "FULL_PATH=/sdcard/Android/data/com.sec.android.gallery3d/files/.Trash/!FILE!"
-    
+
     echo ---
-    echo "파일 경로: !FULL_PATH!"
+    echo "파일 경로: !FILE!"
     echo ---
     
     REM 수정 날짜와 시간을 가져오기
-    FOR /F "tokens=2,3" %%i IN ('adb shell stat "!FULL_PATH!" ^| findstr "Modify:"') DO (
+    FOR /F "tokens=2,3" %%i IN ('adb shell stat "!FILE!" ^| findstr "Modify:"') DO (
         SET "MODIFY_DATE=%%i"
         SET "MODIFY_TIME=%%j"
     )
@@ -317,7 +332,5 @@ FOR /F "tokens=*" %%A IN ('adb shell ls /sdcard/Android/data/com.sec.android.gal
     echo "파일 복사 중: !RESULT!"
 
     REM 파일을 지정된 위치로 복사
-    adb pull "!FULL_PATH!" "C:\test\Trash\!RESULT!"
+    adb pull "!FILE!" "C:\test\Soda_cache\!RESULT!"
 )
-
-ENDLOCAL
