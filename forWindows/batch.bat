@@ -20,15 +20,85 @@ if not exist "C:\test\" (
     mkdir "C:\test\"
 )
 
-REM adb로 사진 파일 복사
-adb pull /sdcard/DCIM/Camera/ C:\test\
+mkdir "C:\test\Camera"
 
-REM 에러 처리
-if errorlevel 1 (
-    echo "사진 파일 복사 실패"
-    pause
-    exit /b
+REM jpg 파일 목록 가져오기 및 파일 처리
+FOR /F "tokens=*" %%A IN ('adb shell ls /sdcard/DCIM/Camera/*.jpg 2^>NUL') DO (
+    SET "FILE=%%A"
+    
+    REM 파일 이름에서 CR(Carriage Return) 제거
+    FOR /F "delims=" %%B IN ('echo !FILE!') DO (
+        SET "FILE=%%B"
+    )
+    
+    REM 수정 날짜와 시간을 가져오기
+    FOR /F "tokens=2,3" %%i IN ('adb shell stat "!FILE!" ^| findstr "Modify:"') DO (
+        SET "MODIFY_DATE=%%i"
+        SET "MODIFY_TIME=%%j"
+    )
+
+    REM MODIFY_DATE에서 YYYYMMDD 추출
+    SET "DATE_PART=!MODIFY_DATE:~0,4!!MODIFY_DATE:~5,2!!MODIFY_DATE:~8,2!"
+
+    REM MODIFY_TIME에서 HHMMSS 추출
+    SET "TIME_PART=!MODIFY_TIME:~0,2!!MODIFY_TIME:~3,2!!MODIFY_TIME:~6,2!"
+
+    REM 최종 결과 생성
+    SET "RESULT=!DATE_PART!_!TIME_PART!.jpg"
+    
+    echo "파일 복사 중: !RESULT!"
+
+    REM 파일을 지정된 위치로 복사
+    adb pull "!FILE!" "C:\test\Camera\!RESULT!"
 )
+
+REM SNOW 폴더 존재 여부 확인
+adb shell if [ -d "/sdcard/DCIM/Camera/SNOW" ]; then echo exists; else echo not_exists; fi > temp_check.txt
+set /p FOLDER_EXISTS=<temp_check.txt
+del temp_check.txt
+
+if "%FOLDER_EXISTS%"=="exists" (
+    echo SNOW 폴더가 발견되었습니다. 파일 복사 중...
+
+    REM SNOW 폴더의 모든 jpg 파일 목록 가져오기
+    FOR /F "delims=" %%A IN ('adb shell ls /sdcard/DCIM/Camera/SNOW/*.jpg 2^>NUL') DO (
+        SET "FILE=%%A"
+
+        REM 파일 이름에서 CR(Carriage Return) 제거
+        FOR /F "delims=" %%B IN ('echo !FILE!') DO (
+            SET "FILE=%%B"
+        )
+        
+        REM 수정 날짜와 시간을 가져오기
+        FOR /F "tokens=2,3" %%i IN ('adb shell stat "!FILE!" ^| findstr "Modify:"') DO (
+            SET "MODIFY_DATE=%%i"
+            SET "MODIFY_TIME=%%j"
+        )
+
+        REM MODIFY_DATE에서 YYYYMMDD 추출
+        SET "DATE_PART=!MODIFY_DATE:~0,4!!MODIFY_DATE:~5,2!!MODIFY_DATE:~8,2!"
+
+        REM MODIFY_TIME에서 HHMMSS 추출
+        SET "TIME_PART=!MODIFY_TIME:~0,2!!MODIFY_TIME:~3,2!!MODIFY_TIME:~6,2!"
+
+        REM 최종 결과 생성
+        SET "RESULT=!DATE_PART!_!TIME_PART!.jpg"
+        
+        echo "파일 복사 중: !RESULT!"
+
+        REM 파일을 지정된 위치로 복사
+        adb pull "!FILE!" "C:\test\Camera\!RESULT!"
+
+        IF %ERRORLEVEL% EQU 0 (
+            echo 파일 다운로드 완료: !RESULT!
+        ) ELSE (
+            echo 파일 다운로드 실패: !FILE!
+        )
+    )
+) ELSE (
+    echo SNOW 폴더가 존재하지 않습니다.
+)
+
 
 REM 4. EXIF GPS데이터 추출 (디렉토리 내 모든 JPEG 파일에 대해)
 
@@ -55,54 +125,128 @@ if errorlevel 1 (
 )
 
 REM 5. 휴지통 폴더 복사
-echo "휴지통 폴더 복사 중..."
-adb pull /sdcard/Android/data/com.sec.android.gallery3d/files/.Trash C:\test\
+mkdir "C:\test\Trash"
 
-if errorlevel 1 (
-    echo "휴지통 폴더 복사 실패"
-) else (
-    REM 폴더 이름 변경
-    ren "C:\test\.Trash" "Trash"
-    echo "폴더명을 Trash로 변경하였습니다."
-)
+REM 파일 목록 가져오기 및 파일 처리
+FOR /F "tokens=*" %%A IN ('adb shell ls /sdcard/Android/data/com.sec.android.gallery3d/files/.Trash 2^>NUL') DO (
+    SET "FILE=%%A"
+    
+    REM 파일 이름에서 CR(Carriage Return) 제거
+    FOR /F "delims=" %%B IN ('echo !FILE!') DO (
+        SET "FILE=%%B"
+    )
+    
+    REM 전체 파일 경로 설정
+    SET "FULL_PATH=/sdcard/Android/data/com.sec.android.gallery3d/files/.Trash/!FILE!"
+    
+    REM 수정 날짜와 시간을 가져오기
+    FOR /F "tokens=2,3" %%i IN ('adb shell stat "!FULL_PATH!" ^| findstr "Modify:"') DO (
+        SET "MODIFY_DATE=%%i"
+        SET "MODIFY_TIME=%%j"
+    )
 
-REM 파일을 .jpg로 변경
-echo "파일 확장자 변경 중..."
-for %%f in (C:\test\Trash\*) do (
-    ren "%%f" "%%~nf.jpg"
+    REM MODIFY_DATE에서 YYYYMMDD 추출
+    SET "DATE_PART=!MODIFY_DATE:~0,4!!MODIFY_DATE:~5,2!!MODIFY_DATE:~8,2!"
+
+    REM MODIFY_TIME에서 HHMMSS 추출
+    SET "TIME_PART=!MODIFY_TIME:~0,2!!MODIFY_TIME:~3,2!!MODIFY_TIME:~6,2!"
+
+    REM 최종 결과 생성
+    SET "RESULT=!DATE_PART!_!TIME_PART!.jpg"
+    
+    echo "파일 복사 중: !RESULT!"
+
+    REM 파일을 지정된 위치로 복사
+    adb pull "!FULL_PATH!" "C:\test\Trash\!RESULT!"
 )
 
 
 REM 8. 네이버 MYBOX 캐시파일 복사
-echo "네이버 MYBOX 캐시파일 복사 중..."
-adb pull /sdcard/Android/data/com.nhn.android.ndrive/cache/image_manager_disk_cache C:\test\ >nul 2>&1
+REM ADB Temp 폴더 경로
+SET "TEMP_FOLDER=/sdcard/Android/data/com.nhn.android.ndrive/cache/temp"
+SET "LOCAL_SAVE_PATH=C:\test\MYBOX_cache"
 
-if errorlevel 1 (
-    echo "해당 어플을 찾을 수 없습니다: com.nhn.android.ndrive"
-) else (
-    REM 폴더 이름 변경
-    ren "C:\test\image_manager_disk_cache" "MYBOX_cache"
-    echo "폴더명을 MYBOX_cache로 변경하였습니다."
+REM 폴더가 없으면 생성
+if not exist "C:\test\MYBOX_cache" (
+    echo "폴더가 존재하지 않습니다. 새 폴더를 생성합니다..."
+    mkdir "C:\test\MYBOX_cache"
 )
 
-REM 확장자가 .0로 끝나는 파일을 .jpg로 변경
-echo "파일 확장자 변경 중..."
-for %%f in (C:\test\MYBOX_cache\*.0) do (
-    ren "%%f" "%%~nf.jpg"
+REM ADB로 Temp 폴더에서 모든 파일 및 하위 폴더 목록 가져오기
+echo Temp 폴더의 모든 파일 탐색 중...
+FOR /F "delims=" %%A IN ('adb shell find "%TEMP_FOLDER%" -type f -name "*.jpg" 2^>NUL') DO (
+    SET "FILE=%%A"
+
+    echo 파일 이름: %FILE%
+
+    REM Windows 줄바꿈 제거
+    FOR /F "delims=" %%B IN ('echo !FILE!') DO (
+        SET "FILE=%%B"
+    )
+
+    IF "!FILE!"=="" (
+        REM 빈 값이면 다음으로 이동
+        CONTINUE
+    )
+
+    REM 수정 날짜와 시간을 가져오기
+    FOR /F "tokens=2,3" %%i IN ('adb shell stat "!FILE!" ^| findstr "Modify:"') DO (
+        SET "MODIFY_DATE=%%i"
+        SET "MODIFY_TIME=%%j"
+    )
+
+    REM MODIFY_DATE에서 YYYYMMDD 추출
+    SET "DATE_PART=!MODIFY_DATE:~0,4!!MODIFY_DATE:~5,2!!MODIFY_DATE:~8,2!"
+
+    REM MODIFY_TIME에서 HHMMSS 추출
+    SET "TIME_PART=!MODIFY_TIME:~0,2!!MODIFY_TIME:~3,2!!MODIFY_TIME:~6,2!"
+
+    REM 최종 결과 생성
+    SET "RESULT=!DATE_PART!_!TIME_PART!.jpg"
+    
+    echo "파일 복사 중: !RESULT!"
+
+    REM 파일을 지정된 위치로 복사
+    adb pull "!FILE!" "C:\test\MYBOX_cache\!RESULT!"
 )
+
+echo 네이버 MYBOX 캐시파일 복사 완료!
 
 
 REM 9. 소다 앱 임시 사진 파일 복사
 echo "소다 앱 임시 사진 파일 복사 중..."
-adb pull /sdcard/Android/data/com.snowcorp.soda.android/files/temp C:\test\>nul 2>&1
-if errorlevel 1 (
-    echo "해당 어플을 찾을 수 없습니다: com.snowcorp.soda.android"
-) else (
-    REM 폴더 이름 변경
-    ren "C:\test\temp" "Soda_cache"
-    echo "폴더명을 Soda_cache 변경하였습니다."
-)
+mkdir "C:\test\Soda_cache"
 
+
+REM jpg 파일 목록 가져오기 및 파일 처리
+FOR /F "tokens=*" %%A IN ('adb shell ls /sdcard/Android/data/com.snowcorp.soda.android/files/temp/*.jpg 2^>NUL') DO (
+    SET "FILE=%%A"
+    
+    REM 파일 이름에서 CR(Carriage Return) 제거
+    FOR /F "delims=" %%B IN ('echo !FILE!') DO (
+        SET "FILE=%%B"
+    )
+    
+    REM 수정 날짜와 시간을 가져오기
+    FOR /F "tokens=2,3" %%i IN ('adb shell stat "!FILE!" ^| findstr "Modify:"') DO (
+        SET "MODIFY_DATE=%%i"
+        SET "MODIFY_TIME=%%j"
+    )
+
+    REM MODIFY_DATE에서 YYYYMMDD 추출
+    SET "DATE_PART=!MODIFY_DATE:~0,4!!MODIFY_DATE:~5,2!!MODIFY_DATE:~8,2!"
+
+    REM MODIFY_TIME에서 HHMMSS 추출
+    SET "TIME_PART=!MODIFY_TIME:~0,2!!MODIFY_TIME:~3,2!!MODIFY_TIME:~6,2!"
+
+    REM 최종 결과 생성
+    SET "RESULT=!DATE_PART!_!TIME_PART!.jpg"
+    
+    echo "파일 복사 중: !RESULT!"
+
+    REM 파일을 지정된 위치로 복사
+    adb pull "!FILE!" "C:\test\Soda_cache\!RESULT!"
+)
 
 REM 11. 카메라 촬영 완료 로그 복사
 echo "촬영 완료 로그 복사 중..."
@@ -138,13 +282,13 @@ REM 임시 대기 시간 추가 (0.5초 대기)
 timeout /t 1 /nobreak >nul
 
 REM 임시 파일에서 BSSID와 wifiState=WIFI_ASSOCIATED 문자열을 검색
-findstr "BSSID" temp_wifi.txt | findstr "wifiState=WIFI_ASSOCIATED" >nul 2>&1
+findstr "BSSID" temp_wifi.txt | findstr "wifiState=WIFI_ASSOCIATED wifiState=WIFI_DISCONNECTED" >nul 2>&1
 
 REM 에러 처리
 if errorlevel 1 (
     echo "Wi-Fi SSID/BSSID 로그를 찾을 수 없습니다."
 ) else (
-    findstr "BSSID" temp_wifi.txt | findstr "wifiState=WIFI_ASSOCIATED" temp_wifi.txt > C:\test\wifi_log.txt
+    findstr "BSSID" temp_wifi.txt | findstr "wifiState=WIFI_ASSOCIATED wifiState=WIFI_DISCONNECTED" temp_wifi.txt > C:\test\wifi_log.txt
     echo "Wi-Fi SSID/BSSID 로그를 wifi_log.txt에 저장하였습니다."
 )
 
@@ -252,3 +396,4 @@ del "C:\test\temp_usagestats.txt"
 
 echo "작업 완료!"
 endlocal
+
