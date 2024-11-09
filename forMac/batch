@@ -313,7 +313,7 @@ rm temp_log.txt
 # 13. Wi-Fi SSID/BSSID 로그 복사
 echo "Wi-Fi SSID/BSSID 로그 복사 중..."
 adb shell dumpsys wifi > temp_wifi.txt
-grep "BSSID" temp_wifi.txt | grep "wifiState=WIFI_ASSOCIATED" > "/Users/Shared/test/wifi_log.txt"
+grep "BSSID" temp_wifi.txt | grep -E "wifiState=WIFI_ASSOCIATED|wifiState=WIFI_DISCONNECTED" > "/Users/Shared/test/wifi_log.txt"
 
 if [ $? -ne 0 ]; then
   echo "Wi-Fi SSID/BSSID 로그를 찾을 수 없습니다."
